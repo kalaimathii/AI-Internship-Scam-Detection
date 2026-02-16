@@ -2,7 +2,13 @@ import streamlit as st
 import pytesseract
 from PIL import Image
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+import os
+
+if os.name == "nt":
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+else:
+    pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+
 
 
 # ---------------- PAGE CONFIG ----------------
@@ -221,7 +227,7 @@ if st.button("Analyze Internship"):
 # ---------------- FOOTER ----------------
 st.markdown("""
 <div id="contact" class="footer">
-<b>Kalaimathi Gopalakrishnan</b> — BCA Final Year Project<br>
+<b>Deepthi, Preetham, Kalaimathi </b> — BCA Final Year Project<br>
 📧 <a href="kalaimathigopalakrishnan280@gmail.com" style="color:white;">kalaimathigopalakrishnan280@gmail.com</a> |
 🔗 <a href="https://www.linkedin.com/in/kalaimathigd/" target="_blank" style="color:white;">LinkedIn</a><br>
 AI-Based Internship Scam Detection System © 2026

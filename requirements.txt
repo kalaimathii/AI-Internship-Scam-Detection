@@ -1,3 +1,6 @@
 streamlit
-pytesseract
+scikit-learn
+numpy
+pandas
 pillow
+pytesseract
