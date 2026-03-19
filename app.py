@@ -9,7 +9,10 @@ import re
 import plotly.graph_objects as go
 from utils import predict_internship, risk_score
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+import os
+
+if os.name == "nt":
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 st.set_page_config(layout="wide")
 
