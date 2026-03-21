@@ -1,50 +1,105 @@
 import pickle
+import re
 
-# Load model and vectorizer
+# ---------------- LOAD MODEL ----------------
 model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
+# ---------------- PREDICTION FUNCTION ----------------
 def predict_internship(text):
-    text_vec = vectorizer.transform([text])
-    result = model.predict(text_vec)[0]
-    return result
+    text_lower = text.lower()
+
+    # ================= RULE-BASED OVERRIDE =================
+
+    # ✅ STRONG GENUINE SIGNALS
+    if "paid internship" in text_lower:
+        return 0
+    if "stipend" in text_lower and "pay" not in text_lower:
+        return 0
+    if "no fee" in text_lower or "no registration fee" in text_lower:
+        return 0
+    if "company pays" in text_lower:
+        return 0
+    if "salary" in text_lower and "fee" not in text_lower:
+        return 0
+
+    # ❌ STRONG FAKE SIGNALS
+    if "registration fee" in text_lower:
+        return 1
+    if "pay fee" in text_lower:
+        return 1
+    if "deposit" in text_lower:
+        return 1
+    if "send money" in text_lower:
+        return 1
+    if "payment required" in text_lower:
+        return 1
+
+    # ================= ML MODEL =================
+    vector = vectorizer.transform([text])
+    prediction = model.predict(vector)[0]
+
+    return prediction
 
 
+# ---------------- RISK SCORE FUNCTION ----------------
 def risk_score(text):
+    text_lower = text.lower()
+
     score = 0
     reasons = []
 
-    text_lower = text.lower()
+    # ---------------- PAYMENT RISK ----------------
+    payment_keywords = [
+        "fee", "payment", "pay", "registration", "deposit",
+        "amount", "charges", "money"
+    ]
 
-    payment_words = ["fee", "payment", "pay", "registration"]
-    urgency_words = ["urgent", "immediate", "limited", "hurry"]
-    contact_words = ["whatsapp", "telegram", "dm"]
+    pay_risk = any(word in text_lower for word in payment_keywords)
 
-    payment_risk = 0
-    urgency_risk = 0
-    contact_risk = 0
+    if pay_risk:
+        # 🔴 BUT avoid false positive for "paid internship"
+        if "paid internship" not in text_lower and "stipend" not in text_lower:
+            score += 40
+            reasons.append("Payment request detected")
 
-    # Payment risk
-    for word in payment_words:
-        if word in text_lower:
-            payment_risk += 20
-            reasons.append(f"Payment related word detected: {word}")
+    # ---------------- URGENCY RISK ----------------
+    urgency_keywords = [
+        "urgent", "immediate", "limited", "hurry",
+        "apply now", "fast", "last date"
+    ]
 
-    # Urgency risk
-    for word in urgency_words:
-        if word in text_lower:
-            urgency_risk += 15
-            reasons.append(f"Urgency word detected: {word}")
+    urg_risk = any(word in text_lower for word in urgency_keywords)
 
-    # Contact risk
-    for word in contact_words:
-        if word in text_lower:
-            contact_risk += 20
-            reasons.append(f"Unofficial contact method: {word}")
+    if urg_risk:
+        score += 25
+        reasons.append("Urgency pressure detected")
 
-    score = payment_risk + urgency_risk + contact_risk
+    # ---------------- CONTACT RISK ----------------
+    contact_keywords = [
+        "whatsapp", "telegram", "dm", "personal email"
+    ]
 
-    if score > 100:
-        score = 100
+    cont_risk = any(word in text_lower for word in contact_keywords)
 
-    return score, reasons, payment_risk, urgency_risk, contact_risk
+    if cont_risk:
+        score += 20
+        reasons.append("Unverified contact method")
+
+    # ---------------- GENUINE SIGNAL REDUCTION ----------------
+    if "paid internship" in text_lower or "stipend" in text_lower:
+        score -= 25
+        reasons.append("Legitimate stipend structure")
+
+    if "official website" in text_lower or "careers page" in text_lower:
+        score -= 15
+        reasons.append("Official application channel")
+
+    if "interview" in text_lower:
+        score -= 10
+        reasons.append("Structured hiring process")
+
+    # ---------------- CLEAN SCORE ----------------
+    score = max(0, min(score, 100))
+
+    return score, reasons, pay_risk, urg_risk, cont_risk

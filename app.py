@@ -209,7 +209,9 @@ else:
                 result = predict_internship(text)
                 score, reasons, pay_risk, urg_risk, cont_risk = risk_score(text)
 
-                confidence = 100 - score if result == 0 else score
+                confidence = 100 - score if result == 0 else min(score + 20, 100)
+                st.write("DEBUG Prediction:", result)
+                st.write("DEBUG Score:", score)
                 # -------- FINAL RESULT --------
                 st.subheader("Final Prediction")
 
