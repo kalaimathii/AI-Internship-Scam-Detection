@@ -7,3 +7,5 @@ pytesseract
 numpy
 plotly
 reportlab
+dnspython
+PyMuPDF
